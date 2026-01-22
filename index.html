@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script>
+  // Helper: send key/value to Qualtrics Embedded Data via postMessage
+  window.twSetED = function(key, value){
+    try {
+      if (window.parent) {
+        var payload = {};
+        payload[key] = value;
+        window.parent.postMessage(
+          { source:'twine', type:'setED', payload: payload },
+          '*'
+        );
+      }
+    } catch (e) {
+      console.log("twSetED error", e);
+    }
+  };
+</script>
+
 <style>
 /* Hide the whole sidebar (includes the undo/redo arrows) */
 tw-sidebar {
