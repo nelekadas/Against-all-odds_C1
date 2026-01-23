@@ -3,7 +3,10 @@
 <head>
 <script>
 (function () {
-  // Send key/value to Qualtrics (parent frame)
+
+  /* ============================
+     Send data to Qualtrics
+     ============================ */
   function twSetED(key, value) {
     try {
       if (window.parent && window.parent !== window) {
@@ -19,7 +22,9 @@
     }
   }
 
-  // Session ID (per browser session)
+  /* ============================
+     Session ID
+     ============================ */
   var pid = sessionStorage.getItem("tw_pid");
   if (!pid) {
     pid = String(Math.floor(100000 + Math.random() * 900000));
@@ -28,14 +33,32 @@
   twSetED("tw_pid", pid);
   twSetED("tw_started", "yes");
 
-  // Log ONLY real choices: Choice_X -> Choice_X-Y
+  /* ============================
+     Decision log
+     ============================ */
   var log = [];
 
   function getPassageName() {
+    try {
+      if (window.State && typeof window.State.passage === "string") {
+        return window.State.passage;
+      }
+    } catch (e) {}
     var p = document.querySelector("tw-passage");
     return p ? (p.getAttribute("name") || "") : "";
   }
 
+  function isChoiceScreen(name) {
+    return /^Choice_[1-4]$/.test(name);
+  }
+
+  function isChoiceOutcome(name) {
+    return /^Choice_[1-4]-(1|2)$/.test(name);
+  }
+
+  /* ============================
+     Click listener
+     ============================ */
   document.addEventListener("click", function (e) {
     var link = e.target.closest && e.target.closest("tw-link");
     if (!link) return;
@@ -46,24 +69,24 @@
 
     var from = getPassageName();
 
-    // Wait for Twine navigation to complete, then read current passage again
+    // Wait for Twine navigation to finish
     setTimeout(function () {
       var to = getPassageName();
       if (!to || to === from) return;
 
-      // Only keep actual decision jumps
-      var isDecision = /^Choice_\d+$/.test(from) && /^Choice_\d+-\d+$/.test(to);
-      if (!isDecision) return;
+      // Log ONLY real decisions
+      if (!isChoiceScreen(from) || !isChoiceOutcome(to)) return;
 
       var entry = from + "->" + to;
 
-      // Avoid duplicates if click fires twice
+      // Prevent duplicates
       if (log.length === 0 || log[log.length - 1] !== entry) {
         log.push(entry);
         twSetED("tw_last_to", to);
         twSetED("tw_log", log.join("|"));
       }
-    }, 50);
+    }, 200);
+
   }, true);
 
 })();
