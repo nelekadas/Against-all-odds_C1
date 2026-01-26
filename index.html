@@ -17,7 +17,6 @@
       console.log("twSetED error:", e);
     }
   }
-  window.twSetED = twSetED;
 
   // session id
   var pid = sessionStorage.getItem("tw_pid");
@@ -30,26 +29,25 @@
 
   var choices = [];
 
-  function getFromPassage(linkEl) {
-    // most reliable: the tw-passage that contains the clicked link
-    var p = linkEl.closest && linkEl.closest("tw-passage");
-    return p ? (p.getAttribute("name") || "") : "";
-  }
-
   document.addEventListener("click", function (e) {
     var link = e.target.closest && e.target.closest("tw-link");
     if (!link) return;
 
-    var to = link.getAttribute("passage-name") || "";
+    // destination passage
+    var to = link.getAttribute("passage-name");
     if (!to) return;
 
-    var from = getFromPassage(link);
+    // source passage (the passage containing the clicked link)
+    var fromEl = link.closest && link.closest("tw-passage");
+    var from = fromEl ? (fromEl.getAttribute("name") || "") : "";
 
-    // ONLY log: Choice_X -> Choice_X-1 or Choice_X-2
-    var isDecision = /^Choice_\d+$/.test(from) && /^Choice_\d+-(1|2)$/.test(to);
-    if (!isDecision) return;
+    // only log Choice_X -> Choice_X-1/2
+    if (!/^Choice_\d+$/.test(from)) return;
+    if (!/^Choice_\d+-(1|2)$/.test(to)) return;
 
     var entry = from + "->" + to;
+
+    // avoid duplicates
     if (choices.length === 0 || choices[choices.length - 1] !== entry) {
       choices.push(entry);
       twSetED("tw_last_to", to);
